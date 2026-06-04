@@ -98,6 +98,8 @@ async function ingestPdf(file: File, id: string): Promise<IngestResult> {
     title: metadata.title,
     author: metadata.author,
     pdfDoc: doc,
+    // Retain the raw bytes so pdf-lib can load and copy pages at export time.
+    rawBytes: new Uint8Array(bytes),
   };
 
   return {

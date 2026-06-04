@@ -29,6 +29,8 @@ function makePdfResource(id: string, thumbnailUrls: string[] = []) {
       pageCount: thumbnailUrls.length || 1,
       pageDimensions: [{ width: 595, height: 842 }],
       thumbnailUrls,
+      pdfDoc: null,
+      rawBytes: new Uint8Array(0),
     },
   };
 }
