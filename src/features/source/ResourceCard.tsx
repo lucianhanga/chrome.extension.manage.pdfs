@@ -1,10 +1,18 @@
 // ResourceCard: displays one loaded resource with thumbnail, metadata, and controls.
 // Multi-page PDFs show a "Show pages / Hide pages" toggle that expands the PageGrid.
+//
+// Phase 3: image and single-page PDF resources are draggable into the destination pane.
+// The drag handle covers the entire card for images; for multi-page PDFs, individual
+// page tiles in the PageGrid are the drag sources (see PageGrid.tsx).
 
 import { useState } from 'react';
+import { useDraggable } from '@dnd-kit/core';
 import type { Resource, PdfResourceData, ImageResourceData } from '../../state/types.ts';
 import { formatBytes } from '../../pdf/ingest.ts';
 import { PageGrid } from './PageGrid.tsx';
+import { buildImageDragPayload, buildPdfDragPayload } from '../../shared/drag-types.ts';
+import type { DraggableData } from '../../shared/drag-types.ts';
+import { useAppStore } from '../../state/store.ts';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 
 interface ResourceCardProps {
@@ -16,6 +24,7 @@ interface ResourceCardProps {
 export function ResourceCard({ resource, onRemove, onPreview }: ResourceCardProps) {
   const { id, name, sizeBytes, data } = resource;
   const [gridExpanded, setGridExpanded] = useState(false);
+  const pageSelections = useAppStore((s) => s.pageSelections);
 
   function handleRemove(e: React.MouseEvent) {
     e.stopPropagation();
@@ -28,8 +37,41 @@ export function ResourceCard({ resource, onRemove, onPreview }: ResourceCardProp
     ? ((data as PdfResourceData).pdfDoc as PDFDocumentProxy | null)
     : null;
 
+  // Determine if this card should itself be draggable:
+  //   - Images: always the card itself is the drag source.
+  //   - Single-page PDFs: the card acts as the drag source for that one page.
+  //   - Multi-page PDFs: individual page tiles are the drag sources (PageGrid handles it).
+  const isCardDraggable = data.kind === 'image' || (isPdf && !isMultiPage);
+
+  let cardDraggableData: DraggableData | undefined;
+  if (data.kind === 'image') {
+    cardDraggableData = { payload: buildImageDragPayload(id) };
+  } else if (isPdf && !isMultiPage) {
+    const sel = pageSelections[id] ?? new Set<number>();
+    cardDraggableData = { payload: buildPdfDragPayload(id, 0, sel) };
+  }
+
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `resource-card-${id}`,
+    data: cardDraggableData,
+    disabled: !isCardDraggable,
+  });
+
+  const cardRef = isCardDraggable ? setNodeRef : undefined;
+  const dragAttrs = isCardDraggable ? attributes : {};
+  const dragListeners = isCardDraggable ? listeners : {};
+
   return (
-    <div className="px-3 py-3 bg-gray-900 rounded-lg border border-gray-800 hover:border-gray-700 transition-colors group">
+    <div
+      ref={cardRef}
+      className={[
+        'px-3 py-3 bg-gray-900 rounded-lg border border-gray-800 hover:border-gray-700 transition-colors group',
+        isCardDraggable ? 'cursor-grab active:cursor-grabbing' : '',
+        isDragging ? 'opacity-40 border-blue-400' : '',
+      ].join(' ')}
+      {...dragAttrs}
+      {...dragListeners}
+    >
       {/* Main row: thumbnail + metadata + remove */}
       <div className="flex items-start gap-3">
         {/* Thumbnail / icon — clicking opens the lightbox at page 0 */}
@@ -38,6 +80,8 @@ export function ResourceCard({ resource, onRemove, onPreview }: ResourceCardProp
           aria-label={`Preview ${name}`}
           className="flex-shrink-0 w-16 h-20 bg-gray-800 rounded overflow-hidden border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           onClick={() => onPreview(resource, 0)}
+          // Prevent the drag listener from activating on thumbnail click.
+          onPointerDown={(e) => e.stopPropagation()}
         >
           <ThumbnailArea data={data} />
         </button>
@@ -50,11 +94,23 @@ export function ResourceCard({ resource, onRemove, onPreview }: ResourceCardProp
           <p className="text-xs text-gray-500 mt-0.5">{formatBytes(sizeBytes)}</p>
           <MetaLines data={data} />
 
+          {/* Drag hint for draggable cards */}
+          {isCardDraggable && (
+            <p className="text-xs text-gray-700 mt-1">Drag to destination</p>
+          )}
+          {isMultiPage && (
+            <p className="text-xs text-gray-700 mt-1">Expand pages to drag individually</p>
+          )}
+
           {/* Show / Hide pages toggle for multi-page PDFs */}
           {isMultiPage && (
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); setGridExpanded((v) => !v); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setGridExpanded((v) => !v);
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
               className="mt-2 flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors"
             >
               <svg
@@ -77,6 +133,7 @@ export function ResourceCard({ resource, onRemove, onPreview }: ResourceCardProp
           type="button"
           aria-label={`Remove ${name}`}
           onClick={handleRemove}
+          onPointerDown={(e) => e.stopPropagation()}
           className="flex-shrink-0 mt-0.5 p-1 rounded text-gray-600 hover:text-red-400 hover:bg-gray-800 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
         >
           <svg

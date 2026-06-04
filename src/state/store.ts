@@ -31,7 +31,7 @@ interface AppState {
   /**
    * Per-resource page selections (0-based page indices).
    * Only populated for PDF resources with an expanded grid.
-   * Will be consumed by Phase 3 drag-to-destination.
+   * Consumed by Phase 3 drag-to-destination.
    */
   pageSelections: Record<string, Set<number>>;
   // Actions
@@ -39,8 +39,11 @@ interface AppState {
   removeResource: (id: string) => void;
   clearResources: () => void;
   addDestinationItem: (item: DestinationItem) => void;
+  addDestinationItems: (items: DestinationItem[]) => void;
   removeDestinationItem: (id: string) => void;
+  duplicateDestinationItem: (id: string) => void;
   reorderDestinationItems: (orderedIds: string[]) => void;
+  clearDestination: () => void;
   setExportProfile: (profile: ExportProfile) => void;
   setPageSelection: (resourceId: string, selection: Set<number>) => void;
   clearPageSelection: (resourceId: string) => void;
@@ -81,10 +84,24 @@ export const useAppStore = create<AppState>((set, get) => ({
   addDestinationItem: (item) =>
     set((state) => ({ destinationItems: [...state.destinationItems, item] })),
 
+  addDestinationItems: (items) =>
+    set((state) => ({ destinationItems: [...state.destinationItems, ...items] })),
+
   removeDestinationItem: (id) =>
     set((state) => ({
       destinationItems: state.destinationItems.filter((i) => i.id !== id),
     })),
+
+  duplicateDestinationItem: (id) =>
+    set((state) => {
+      const idx = state.destinationItems.findIndex((i) => i.id === id);
+      if (idx === -1) return state;
+      const original = state.destinationItems[idx];
+      const clone: DestinationItem = { ...original, id: crypto.randomUUID() };
+      const next = [...state.destinationItems];
+      next.splice(idx + 1, 0, clone);
+      return { destinationItems: next };
+    }),
 
   reorderDestinationItems: (orderedIds) =>
     set((state) => ({
@@ -92,6 +109,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         .map((id) => state.destinationItems.find((i) => i.id === id))
         .filter((i): i is DestinationItem => i !== undefined),
     })),
+
+  clearDestination: () => set({ destinationItems: [] }),
 
   setExportProfile: (profile) => set({ activeExportProfile: profile }),
 
