@@ -1,8 +1,11 @@
-// ResourceCard: displays one loaded resource with thumbnail(s), metadata, and a remove button.
+// ResourceCard: displays one loaded resource with thumbnail, metadata, and controls.
+// Multi-page PDFs show a "Show pages / Hide pages" toggle that expands the PageGrid.
 
 import { useState } from 'react';
 import type { Resource, PdfResourceData, ImageResourceData } from '../../state/types.ts';
 import { formatBytes } from '../../pdf/ingest.ts';
+import { PageGrid } from './PageGrid.tsx';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 
 interface ResourceCardProps {
   resource: Resource;
@@ -12,61 +15,92 @@ interface ResourceCardProps {
 
 export function ResourceCard({ resource, onRemove, onPreview }: ResourceCardProps) {
   const { id, name, sizeBytes, data } = resource;
-  const [thumbPage, setThumbPage] = useState(0); // 0-based
+  const [gridExpanded, setGridExpanded] = useState(false);
 
   function handleRemove(e: React.MouseEvent) {
     e.stopPropagation();
     onRemove(id);
   }
 
+  const isPdf = data.kind === 'pdf';
+  const isMultiPage = isPdf && (data as PdfResourceData).pageCount > 1;
+  const pdfDoc = isPdf
+    ? ((data as PdfResourceData).pdfDoc as PDFDocumentProxy | null)
+    : null;
+
   return (
-    <div className="flex items-start gap-3 px-3 py-3 bg-gray-900 rounded-lg border border-gray-800 hover:border-gray-700 transition-colors group">
-      {/* Thumbnail / icon area */}
-      <button
-        type="button"
-        aria-label={`Preview ${name}`}
-        className="flex-shrink-0 w-16 h-20 bg-gray-800 rounded overflow-hidden border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        onClick={() => onPreview(resource, data.kind === 'pdf' ? thumbPage : undefined)}
-      >
-        <ThumbnailArea data={data} thumbPage={thumbPage} />
-      </button>
+    <div className="px-3 py-3 bg-gray-900 rounded-lg border border-gray-800 hover:border-gray-700 transition-colors group">
+      {/* Main row: thumbnail + metadata + remove */}
+      <div className="flex items-start gap-3">
+        {/* Thumbnail / icon — clicking opens the lightbox at page 0 */}
+        <button
+          type="button"
+          aria-label={`Preview ${name}`}
+          className="flex-shrink-0 w-16 h-20 bg-gray-800 rounded overflow-hidden border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          onClick={() => onPreview(resource, 0)}
+        >
+          <ThumbnailArea data={data} />
+        </button>
 
-      {/* Metadata column */}
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-gray-200 truncate" title={name}>
-          {name}
-        </p>
-        <p className="text-xs text-gray-500 mt-0.5">{formatBytes(sizeBytes)}</p>
-        <MetaLines data={data} />
+        {/* Metadata column */}
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium text-gray-200 truncate" title={name}>
+            {name}
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5">{formatBytes(sizeBytes)}</p>
+          <MetaLines data={data} />
 
-        {/* Page navigator for multi-page PDFs */}
-        {data.kind === 'pdf' && data.pageCount > 1 && (
-          <PageNavigator
-            pageCount={data.pageCount}
-            current={thumbPage}
-            onChange={setThumbPage}
-          />
-        )}
+          {/* Show / Hide pages toggle for multi-page PDFs */}
+          {isMultiPage && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setGridExpanded((v) => !v); }}
+              className="mt-2 flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            >
+              <svg
+                className={['w-3 h-3 transition-transform', gridExpanded ? 'rotate-90' : ''].join(' ')}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+              {gridExpanded ? 'Hide pages' : 'Show pages'}
+            </button>
+          )}
+        </div>
+
+        {/* Remove button — visible on hover/focus */}
+        <button
+          type="button"
+          aria-label={`Remove ${name}`}
+          onClick={handleRemove}
+          className="flex-shrink-0 mt-0.5 p-1 rounded text-gray-600 hover:text-red-400 hover:bg-gray-800 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
 
-      {/* Remove button — only visible on hover/focus */}
-      <button
-        type="button"
-        aria-label={`Remove ${name}`}
-        onClick={handleRemove}
-        className="flex-shrink-0 mt-0.5 p-1 rounded text-gray-600 hover:text-red-400 hover:bg-gray-800 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-      >
-        <svg
-          className="w-4 h-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-          aria-hidden="true"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+      {/* Expanded page grid — only mounted when toggled open */}
+      {isPdf && gridExpanded && (
+        <PageGrid
+          resourceId={id}
+          data={data as PdfResourceData}
+          pdfDoc={pdfDoc}
+          onOpenLightbox={(pageIndex) => onPreview(resource, pageIndex)}
+        />
+      )}
     </div>
   );
 }
@@ -75,23 +109,21 @@ export function ResourceCard({ resource, onRemove, onPreview }: ResourceCardProp
 
 interface ThumbnailAreaProps {
   data: Resource['data'];
-  thumbPage: number;
 }
 
-function ThumbnailArea({ data, thumbPage }: ThumbnailAreaProps) {
+function ThumbnailArea({ data }: ThumbnailAreaProps) {
   if (data.kind === 'pdf') {
-    const url = (data as PdfResourceData).thumbnailUrls[thumbPage];
+    const url = (data as PdfResourceData).thumbnailUrls[0];
     if (url) {
       return (
         <img
           src={url}
-          alt={`Page ${thumbPage + 1}`}
+          alt="Page 1"
           className="w-full h-full object-contain"
           loading="lazy"
         />
       );
     }
-    // Fallback if thumbnail is empty string (render failed)
     return <PageFallback />;
   }
 
@@ -187,42 +219,4 @@ function MetaLines({ data }: MetaLinesProps) {
 
   // text
   return <p className="text-xs text-gray-400 mt-1">Plain text</p>;
-}
-
-interface PageNavigatorProps {
-  pageCount: number;
-  current: number;
-  onChange: (page: number) => void;
-}
-
-function PageNavigator({ pageCount, current, onChange }: PageNavigatorProps) {
-  return (
-    <div className="flex items-center gap-1 mt-2">
-      <button
-        type="button"
-        aria-label="Previous page thumbnail"
-        disabled={current === 0}
-        onClick={(e) => { e.stopPropagation(); onChange(current - 1); }}
-        className="p-0.5 rounded text-gray-600 hover:text-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
-      >
-        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
-      <span className="text-xs text-gray-600">
-        {current + 1} / {pageCount}
-      </span>
-      <button
-        type="button"
-        aria-label="Next page thumbnail"
-        disabled={current === pageCount - 1}
-        onClick={(e) => { e.stopPropagation(); onChange(current + 1); }}
-        className="p-0.5 rounded text-gray-600 hover:text-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
-      >
-        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-    </div>
-  );
 }

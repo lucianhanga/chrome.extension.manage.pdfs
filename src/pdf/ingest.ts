@@ -86,9 +86,9 @@ async function ingestPdf(file: File, id: string): Promise<IngestResult> {
     }
   }
 
-  // Release the pdf.js document now that thumbnails are done.
-  // The raw bytes are not stored in v1 — pdf-lib copyPages is a Phase 4 concern.
-  doc.cleanup();
+  // Keep the PDFDocumentProxy alive so the page grid and lightbox can render
+  // additional pages on demand. The proxy is stored as `pdfDoc` in the resource
+  // data and cleaned up when the resource is removed from the store.
 
   const data: PdfResourceData = {
     kind: 'pdf',
@@ -97,6 +97,7 @@ async function ingestPdf(file: File, id: string): Promise<IngestResult> {
     thumbnailUrls,
     title: metadata.title,
     author: metadata.author,
+    pdfDoc: doc,
   };
 
   return {

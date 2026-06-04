@@ -6,7 +6,8 @@ import { ResourceCard } from './ResourceCard.tsx';
 import { PreviewModal } from './PreviewModal.tsx';
 import { ingestFile, formatBytes } from '../../pdf/ingest.ts';
 import { useAppStore } from '../../state/store.ts';
-import type { Resource } from '../../state/types.ts';
+import type { Resource, PdfResourceData } from '../../state/types.ts';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 
 interface ErrorEntry {
   id: string;
@@ -177,6 +178,11 @@ export function SourcePane() {
           resource={previewTarget.resource}
           initialPage={previewTarget.pageIndex}
           onClose={handleClosePreview}
+          pdfDoc={
+            previewTarget.resource.data.kind === 'pdf'
+              ? ((previewTarget.resource.data as PdfResourceData).pdfDoc as PDFDocumentProxy)
+              : null
+          }
         />
       )}
     </div>

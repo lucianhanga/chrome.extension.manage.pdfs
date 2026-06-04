@@ -15,6 +15,13 @@ export interface PdfResourceData {
   author?: string;
   /** Thumbnail object URLs per page (index-aligned). Revoke on removal. */
   thumbnailUrls: string[];
+  /**
+   * The open PDFDocumentProxy from pdf.js. Kept alive so the page grid and
+   * lightbox can render additional pages on demand without re-parsing the file.
+   * Call doc.cleanup() when the resource is removed.
+   * Typed as unknown to avoid coupling types.ts to pdfjs-dist; cast at use site.
+   */
+  pdfDoc: unknown;
 }
 
 export interface ImageResourceData {
