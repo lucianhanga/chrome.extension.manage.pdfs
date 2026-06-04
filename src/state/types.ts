@@ -50,6 +50,7 @@ export interface Resource {
 export interface DestinationItem {
   id: string;
   resourceId: string;
-  kind: 'pdf-page' | 'image';
+  // 'text' items are rendered to a PDF page at export time (Phase 4).
+  kind: 'pdf-page' | 'image' | 'text';
   pageIndex?: number;
 }

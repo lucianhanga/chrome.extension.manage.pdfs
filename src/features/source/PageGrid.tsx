@@ -12,13 +12,18 @@
 // thumbnailUrls array (populated during ingestion for the first page, then
 // expanded here for remaining pages on demand).
 //
-// Phase 3 drag-source attach point is marked with TODO comments below.
+// Phase 3: page tiles are @dnd-kit drag sources.
+//   - Dragging a tile that IS in the current selection drags all selected pages.
+//   - Dragging an unselected tile drags only that page.
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useDraggable } from '@dnd-kit/core';
 import type { PdfResourceData } from '../../state/types.ts';
 import { useAppStore } from '../../state/store.ts';
 import { computeSelection, selectAll, clearSelection } from '../../pdf/page-selection.ts';
 import { getPageThumbnail } from '../../pdf/render.ts';
+import { buildPdfDragPayload } from '../../shared/drag-types.ts';
+import type { DraggableData } from '../../shared/drag-types.ts';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 
 /** Width in pixels for grid thumbnail tiles. */
@@ -205,6 +210,7 @@ export function PageGrid({ resourceId, data, pdfDoc, onOpenLightbox }: PageGridP
             isRendering={renderingPages.has(i)}
             isSelected={selection.has(i)}
             resourceId={resourceId}
+            selection={selection}
             onClick={handleTileClick}
             onOpenLightbox={handleOpenLightbox}
           />
@@ -222,6 +228,8 @@ interface PageTileProps {
   isRendering: boolean;
   isSelected: boolean;
   resourceId: string;
+  /** Current selection set — used to determine multi-select drag payload. */
+  selection: Set<number>;
   onClick: (pageIndex: number, e: React.MouseEvent) => void;
   onOpenLightbox: (pageIndex: number, e: React.MouseEvent) => void;
 }
@@ -232,18 +240,29 @@ function PageTile({
   isRendering,
   isSelected,
   resourceId,
+  selection,
   onClick,
   onOpenLightbox,
 }: PageTileProps) {
+  // Phase 3: attach @dnd-kit drag source.
+  // The drag payload is determined at drag-start time (via attributes/listeners).
+  const draggableData: DraggableData = {
+    payload: buildPdfDragPayload(resourceId, pageIndex, selection),
+  };
+
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `page-tile-${resourceId}-${pageIndex}`,
+    data: draggableData,
+  });
+
   return (
-    // TODO Phase 3: attach @dnd-kit useDraggable here.
-    // Drag payload: { resourceId, pageIndex, kind: 'pdf-page' }
     <div
-      role="listitem"
+      ref={setNodeRef}
       aria-selected={isSelected}
       aria-label={`Page ${pageIndex + 1}`}
       className={[
-        'relative group cursor-pointer rounded overflow-hidden border transition-all select-none',
+        'relative group cursor-grab active:cursor-grabbing rounded overflow-hidden border transition-all select-none',
+        isDragging ? 'opacity-40 border-blue-400' : '',
         isSelected
           ? 'border-blue-500 ring-2 ring-blue-500/40'
           : 'border-gray-700 hover:border-gray-500',
@@ -252,6 +271,8 @@ function PageTile({
       onClick={(e) => onClick(pageIndex, e)}
       data-resource-id={resourceId}
       data-page-index={pageIndex}
+      {...attributes}
+      {...listeners}
     >
       {/* Thumbnail image */}
       {url ? (
@@ -312,6 +333,8 @@ function PageTile({
         aria-label={`Open page ${pageIndex + 1} in lightbox`}
         className="absolute top-1 right-1 p-0.5 rounded bg-black/50 text-gray-300 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
         onClick={(e) => onOpenLightbox(pageIndex, e)}
+        // Stop drag listeners from triggering on the icon click.
+        onPointerDown={(e) => e.stopPropagation()}
       >
         <svg
           className="w-3 h-3"
