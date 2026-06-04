@@ -1,0 +1,16 @@
+node_modules/
+dist/
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Local Claude settings
+.claude/settings.local.json
