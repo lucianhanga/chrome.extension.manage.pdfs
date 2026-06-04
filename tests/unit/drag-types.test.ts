@@ -5,6 +5,7 @@ import { describe, it, expect } from 'vitest';
 import {
   buildPdfDragPayload,
   buildImageDragPayload,
+  buildTextDragPayload,
 } from '../../src/shared/drag-types.ts';
 
 describe('buildPdfDragPayload', () => {
@@ -57,5 +58,13 @@ describe('buildImageDragPayload', () => {
     const payload = buildImageDragPayload('img-42');
     expect(payload.kind).toBe('image');
     expect(payload.resourceId).toBe('img-42');
+  });
+});
+
+describe('buildTextDragPayload', () => {
+  it('creates a text payload with the correct resourceId', () => {
+    const payload = buildTextDragPayload('txt-7');
+    expect(payload.kind).toBe('text');
+    expect(payload.resourceId).toBe('txt-7');
   });
 });

@@ -69,6 +69,13 @@ export function App() {
           kind: 'image',
         };
         addDestinationItems([item]);
+      } else if (payload.kind === 'text') {
+        const item: DestinationItem = {
+          id: crypto.randomUUID(),
+          resourceId: payload.resourceId,
+          kind: 'text',
+        };
+        addDestinationItems([item]);
       }
     },
     [addDestinationItems],
@@ -81,7 +88,7 @@ export function App() {
   const dragCount =
     activeDragPayload?.kind === 'pdf-pages'
       ? activeDragPayload.pages.length
-      : activeDragPayload?.kind === 'image'
+      : activeDragPayload
         ? 1
         : 0;
 
@@ -136,9 +143,11 @@ function DragCountOverlay({ count, kind }: DragCountOverlayProps) {
   const label =
     kind === 'image'
       ? 'image'
-      : count === 1
-        ? '1 page'
-        : `${count} pages`;
+      : kind === 'text'
+        ? 'text'
+        : count === 1
+          ? '1 page'
+          : `${count} pages`;
 
   return (
     <div className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg shadow-xl opacity-90 pointer-events-none select-none">

@@ -21,7 +21,16 @@ export interface ImageDragPayload {
   resourceId: string;
 }
 
-export type DragPayload = PdfPageDragPayload | ImageDragPayload;
+/**
+ * Payload carried by a draggable text resource card.
+ * The text becomes a rendered PDF page at export time (Phase 4).
+ */
+export interface TextDragPayload {
+  kind: 'text';
+  resourceId: string;
+}
+
+export type DragPayload = PdfPageDragPayload | ImageDragPayload | TextDragPayload;
 
 /** @dnd-kit DraggableData shape — stored in `active.data.current`. */
 export interface DraggableData {
@@ -60,4 +69,11 @@ export function buildPdfDragPayload(
  */
 export function buildImageDragPayload(resourceId: string): ImageDragPayload {
   return { kind: 'image', resourceId };
+}
+
+/**
+ * Build the drag payload for a text resource.
+ */
+export function buildTextDragPayload(resourceId: string): TextDragPayload {
+  return { kind: 'text', resourceId };
 }

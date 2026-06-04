@@ -10,7 +10,11 @@ import { useDraggable } from '@dnd-kit/core';
 import type { Resource, PdfResourceData, ImageResourceData } from '../../state/types.ts';
 import { formatBytes } from '../../pdf/ingest.ts';
 import { PageGrid } from './PageGrid.tsx';
-import { buildImageDragPayload, buildPdfDragPayload } from '../../shared/drag-types.ts';
+import {
+  buildImageDragPayload,
+  buildPdfDragPayload,
+  buildTextDragPayload,
+} from '../../shared/drag-types.ts';
 import type { DraggableData } from '../../shared/drag-types.ts';
 import { useAppStore } from '../../state/store.ts';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
@@ -38,14 +42,17 @@ export function ResourceCard({ resource, onRemove, onPreview }: ResourceCardProp
     : null;
 
   // Determine if this card should itself be draggable:
-  //   - Images: always the card itself is the drag source.
+  //   - Images and text: the card itself is the drag source (single-page entities).
   //   - Single-page PDFs: the card acts as the drag source for that one page.
   //   - Multi-page PDFs: individual page tiles are the drag sources (PageGrid handles it).
-  const isCardDraggable = data.kind === 'image' || (isPdf && !isMultiPage);
+  const isCardDraggable =
+    data.kind === 'image' || data.kind === 'text' || (isPdf && !isMultiPage);
 
   let cardDraggableData: DraggableData | undefined;
   if (data.kind === 'image') {
     cardDraggableData = { payload: buildImageDragPayload(id) };
+  } else if (data.kind === 'text') {
+    cardDraggableData = { payload: buildTextDragPayload(id) };
   } else if (isPdf && !isMultiPage) {
     const sel = pageSelections[id] ?? new Set<number>();
     cardDraggableData = { payload: buildPdfDragPayload(id, 0, sel) };
@@ -78,10 +85,16 @@ export function ResourceCard({ resource, onRemove, onPreview }: ResourceCardProp
         <button
           type="button"
           aria-label={`Preview ${name}`}
-          className="flex-shrink-0 w-16 h-20 bg-gray-800 rounded overflow-hidden border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={[
+            'flex-shrink-0 w-16 h-20 bg-gray-800 rounded overflow-hidden border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500',
+            isCardDraggable ? 'cursor-grab active:cursor-grabbing' : '',
+          ].join(' ')}
           onClick={() => onPreview(resource, 0)}
-          // Prevent the drag listener from activating on thumbnail click.
-          onPointerDown={(e) => e.stopPropagation()}
+          // For non-draggable cards, stop the pointerdown so a thumbnail click
+          // never starts a drag. For draggable cards, let it bubble to the card's
+          // drag listeners; the pointer activation distance keeps clicks (preview)
+          // and drags distinct.
+          onPointerDown={isCardDraggable ? undefined : (e) => e.stopPropagation()}
         >
           <ThumbnailArea data={data} />
         </button>

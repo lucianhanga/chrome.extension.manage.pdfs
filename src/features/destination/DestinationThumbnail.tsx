@@ -20,7 +20,7 @@ const DEST_THUMB_WIDTH = 96;
 
 interface DestinationThumbnailProps {
   resourceId: string;
-  kind: 'pdf-page' | 'image';
+  kind: 'pdf-page' | 'image' | 'text';
   pageIndex?: number;
   className?: string;
 }
@@ -113,6 +113,20 @@ export function DestinationThumbnail({
       }
     };
   }, []);
+
+  // Text items have no rendered raster yet (the page is produced at export time,
+  // Phase 4). Show a page-like preview of the text snippet.
+  if (kind === 'text') {
+    const snippet =
+      resource && resource.data.kind === 'text' ? resource.data.preview : '';
+    return (
+      <div className={`flex flex-col bg-gray-100 text-gray-800 p-1 overflow-hidden ${className}`}>
+        <span className="text-[7px] leading-tight whitespace-pre-wrap break-words overflow-hidden">
+          {snippet || 'Text'}
+        </span>
+      </div>
+    );
+  }
 
   if (isRendering) {
     return (

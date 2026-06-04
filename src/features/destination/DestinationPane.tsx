@@ -243,9 +243,9 @@ function EmptyState({ isOver }: EmptyStateProps) {
         {isOver ? 'Release to add to destination' : 'No pages assembled yet'}
       </p>
       <p className="text-xs text-gray-700 mt-2 max-w-xs leading-relaxed">
-        Drag PDF page tiles or image cards from the Source pane into this area.
-        Multi-select pages first (Ctrl/Cmd-click or Shift-click), then drag any
-        selected tile to drop the entire selection at once.
+        Drag PDF page tiles, images, or text resources from the Source pane into
+        this area. For multi-page PDFs, multi-select pages first (Ctrl/Cmd-click
+        or Shift-click), then drag any selected tile to drop the whole selection.
       </p>
     </div>
   );
@@ -292,7 +292,7 @@ function SortableDestinationCard({
       {...listeners}
     >
       {/* Thumbnail */}
-      <div style={{ aspectRatio: item.kind === 'pdf-page' ? '0.707' : '1' }}>
+      <div style={{ aspectRatio: item.kind === 'image' ? '1' : '0.707' }}>
         <DestinationThumbnail
           resourceId={item.resourceId}
           kind={item.kind}
@@ -356,7 +356,7 @@ function SortableOverlayCard({ item }: SortableOverlayCardProps) {
       className="rounded overflow-hidden border-2 border-blue-400 bg-gray-900 shadow-2xl rotate-2 opacity-90"
       style={{ width: '96px' }}
     >
-      <div style={{ aspectRatio: item.kind === 'pdf-page' ? '0.707' : '1' }}>
+      <div style={{ aspectRatio: item.kind === 'image' ? '1' : '0.707' }}>
         <DestinationThumbnail
           resourceId={item.resourceId}
           kind={item.kind}
