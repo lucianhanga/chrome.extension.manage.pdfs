@@ -9,9 +9,7 @@
 //   2. The inner DndContext here handles reordering within the destination list.
 // Nesting DndContexts is the recommended @dnd-kit pattern for this use case.
 //
-// Phase 4 TODO: Export button is wired to the profile selector but the actual
-// pdf-lib assembly and download are not yet implemented. The ExportBar here is
-// intentionally left stubbed — Phase 4 will implement the full pipeline.
+// Phase 4: Export button runs the full assembly + download pipeline.
 
 import { useCallback, useState } from 'react';
 import {
@@ -36,15 +34,26 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useAppStore } from '../../state/store.ts';
-import type { DestinationItem, ExportProfile } from '../../state/types.ts';
+import type { DestinationItem, ExportProfile, Resource } from '../../state/types.ts';
 import { DestinationThumbnail } from './DestinationThumbnail.tsx';
 import { DESTINATION_DROP_ID } from '../../app/App.tsx';
+import { assemblePdf, downloadPdf } from '../../pdf/assemble.ts';
+import { PRINT_PROFILE, WEB_PROFILE, COMPRESSED_PROFILE } from '../../pdf/profiles.ts';
+import type { ExportProfileParams } from '../../pdf/profiles.ts';
+
+// Map profile name to its parameter table.
+function getProfileParams(profile: ExportProfile): ExportProfileParams {
+  if (profile === 'web') return WEB_PROFILE;
+  if (profile === 'compressed') return COMPRESSED_PROFILE;
+  return PRINT_PROFILE;
+}
 
 // --- Main component ---
 
 export function DestinationPane() {
   const {
     destinationItems,
+    resources,
     activeExportProfile,
     reorderDestinationItems,
     removeDestinationItem,
@@ -54,6 +63,35 @@ export function DestinationPane() {
   } = useAppStore();
 
   const [activeSortId, setActiveSortId] = useState<string | null>(null);
+
+  // Export state.
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const handleExport = useCallback(async () => {
+    if (destinationItems.length === 0 || isExporting) return;
+
+    setIsExporting(true);
+    setExportProgress(0);
+    setExportError(null);
+
+    try {
+      const resourceMap = new Map<string, Resource>(resources.map((r) => [r.id, r]));
+      const params = getProfileParams(activeExportProfile);
+
+      const pdfBytes = await assemblePdf(destinationItems, resourceMap, params, {
+        onProgress: (fraction) => setExportProgress(fraction),
+      });
+
+      downloadPdf(pdfBytes, 'result.pdf');
+    } catch (err) {
+      setExportError(String(err));
+    } finally {
+      setIsExporting(false);
+      setExportProgress(0);
+    }
+  }, [destinationItems, resources, activeExportProfile, isExporting]);
 
   // Register this pane as a drop target for source -> destination drags.
   const { setNodeRef: setDropRef, isOver: isDropOver } = useDroppable({
@@ -115,7 +153,7 @@ export function DestinationPane() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {destinationItems.length > 0 && (
+          {destinationItems.length > 0 && !isExporting && (
             <button
               type="button"
               onClick={clearDestination}
@@ -127,7 +165,8 @@ export function DestinationPane() {
           <select
             value={activeExportProfile}
             onChange={(e) => setExportProfile(e.target.value as ExportProfile)}
-            className="text-xs bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-300 cursor-pointer"
+            disabled={isExporting}
+            className="text-xs bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {(Object.keys(profileLabels) as ExportProfile[]).map((p) => (
               <option key={p} value={p}>
@@ -137,11 +176,16 @@ export function DestinationPane() {
           </select>
           <button
             type="button"
-            disabled={destinationItems.length === 0}
-            className="px-3 py-1 bg-green-700 hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs rounded-lg transition-colors"
-            title="Export — Phase 4"
+            onClick={handleExport}
+            disabled={destinationItems.length === 0 || isExporting}
+            className="px-3 py-1 bg-green-700 hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs rounded-lg transition-colors min-w-[80px] text-center"
+            aria-busy={isExporting}
           >
-            Export PDF
+            {isExporting
+              ? exportProgress > 0
+                ? `${Math.round(exportProgress * 100)}%`
+                : 'Exporting...'
+              : 'Export PDF'}
           </button>
         </div>
       </div>
@@ -197,12 +241,23 @@ export function DestinationPane() {
         )}
       </div>
 
-      {/* Live preview hint bar */}
+      {/* Status bar */}
       {destinationItems.length > 0 && (
         <div className="px-4 py-2 bg-gray-900 border-t border-gray-800 flex-shrink-0">
-          <p className="text-xs text-gray-600">
-            {destinationItems.length} {destinationItems.length === 1 ? 'item' : 'items'} in destination order &mdash; drag to reorder &mdash; export ready in Phase 4
-          </p>
+          {exportError ? (
+            <p className="text-xs text-red-400">
+              Export failed: {exportError}
+            </p>
+          ) : isExporting ? (
+            <p className="text-xs text-yellow-400">
+              Assembling PDF... {exportProgress > 0 ? `${Math.round(exportProgress * 100)}%` : ''}
+            </p>
+          ) : (
+            <p className="text-xs text-gray-600">
+              {destinationItems.length} {destinationItems.length === 1 ? 'item' : 'items'} in destination order &mdash; drag to reorder
+              {activeExportProfile === 'compressed' && ' — Compressed profile rasterizes PDF pages (text becomes image)'}
+            </p>
+          )}
         </div>
       )}
     </div>

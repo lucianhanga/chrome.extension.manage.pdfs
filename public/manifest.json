@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "PDF Manager",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Assemble, preview, and export PDFs entirely in your browser. Files never leave your device.",
   "action": {
     "default_title": "Open PDF Manager",

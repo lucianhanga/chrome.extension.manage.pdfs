@@ -207,6 +207,12 @@ chrome-extension://<id>/
 - On load, each file is read into an `ArrayBuffer` (file picker `File` or DnD `DataTransferItem`).
 - Resource model in Zustand store holds metadata + a handle to the bytes. Source PDFs are kept as parsed
   pdf.js `PDFDocumentProxy` (for rendering) and the raw bytes (for pdf-lib `copyPages` at export).
+  - **Gotcha (detached `ArrayBuffer`):** pdf.js *transfers* the `ArrayBuffer` it is handed to its worker,
+    which **detaches** it on the main thread. The ingestion pipeline must therefore copy the raw bytes it
+    keeps for export (`new Uint8Array(bytes.slice(0))`) **before** calling `openPdf`. Building that copy
+    *after* `openPdf` throws `Cannot perform Construct on a detached ArrayBuffer`; because that throw used to
+    escape the per-file `try/catch`, the whole ingestion promise rejected and the Source pane was stranded on
+    an endless progress bar. See `src/pdf/ingest.ts` and the regression test `tests/unit/ingest-pdf.test.ts`.
 - Thumbnails are rendered to canvases and cached as `blob:` object URLs; **revoke** URLs when a resource is
   removed to avoid leaks.
 - Nothing is written to `chrome.storage` or disk in v1 - closing the tab clears everything (explicit,
@@ -358,6 +364,7 @@ Each phase is executable by `chrome-extension-developer`, then validated by `chr
 |---|---|
 | **Large-file memory blowup** (multiple big PDFs as ArrayBuffers + canvases) | Render thumbnails at low DPI; release `PDFPageProxy` after raster; cap concurrent renders; revoke object URLs; warn + soft-limit total loaded bytes; consider lazy page rendering (virtualized gallery) |
 | **pdf.js worker/CSP failure** | Bundle worker as packaged `?url`; set `workerSrc` in entry module before first use; smoke test that `dist/` contains the worker; `worker-src 'self'` in CSP ([#19520](https://github.com/mozilla/pdf.js/discussions/19520)) |
+| **Detached `ArrayBuffer` hangs ingestion** | pdf.js transfers/detaches the buffer it parses; copy the raw export bytes *before* `openPdf`, and wrap per-file ingestion in `try/finally` so a throw can never strand the loading spinner. Covered by `tests/unit/ingest-pdf.test.ts` |
 | **pdf-lib cannot recompress images** | Pre-process via Canvas/OffscreenCanvas before embed; for "Compressed", optionally rasterize copied pages; document the fidelity trade-off ([#1657](https://github.com/Hopding/pdf-lib/issues/1657)) |
 | **Thumbnail render jank** | Off-main-thread render; debounce; virtualize long galleries; progressive (placeholder -> sharp) |
 | **Store review pitfalls** | No host permissions, no remote code, no content scripts; clear "no data collected" privacy disclosure; avoid New Tab override; justify `contextMenus` or drop it |

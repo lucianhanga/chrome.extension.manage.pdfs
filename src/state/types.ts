@@ -22,6 +22,12 @@ export interface PdfResourceData {
    * Typed as unknown to avoid coupling types.ts to pdfjs-dist; cast at use site.
    */
   pdfDoc: unknown;
+  /**
+   * The raw PDF bytes retained for pdf-lib page copying at export time.
+   * pdf-lib requires the original bytes via PDFDocument.load(bytes) to copy
+   * pages. Kept in memory alongside the PDFDocumentProxy.
+   */
+  rawBytes: Uint8Array;
 }
 
 export interface ImageResourceData {
