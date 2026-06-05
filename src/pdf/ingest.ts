@@ -60,6 +60,12 @@ async function ingestPdf(file: File, id: string): Promise<IngestResult> {
     return { ok: false, reason: `"${file.name}": could not read file — ${String(err)}` };
   }
 
+  // pdf.js transfers (detaches) the ArrayBuffer it is handed to its worker, so the
+  // original `bytes` becomes unusable after openPdf. Copy the raw bytes we need for
+  // export NOW, before that happens — otherwise constructing rawBytes below throws
+  // "Cannot perform Construct on a detached ArrayBuffer" and ingestion hangs.
+  const rawBytes = new Uint8Array(bytes.slice(0));
+
   let doc: Awaited<ReturnType<typeof openPdf>>;
   try {
     doc = await openPdf(bytes);
@@ -98,8 +104,9 @@ async function ingestPdf(file: File, id: string): Promise<IngestResult> {
     title: metadata.title,
     author: metadata.author,
     pdfDoc: doc,
-    // Retain the raw bytes so pdf-lib can load and copy pages at export time.
-    rawBytes: new Uint8Array(bytes),
+    // Retain the raw bytes (copied above, before pdf.js detached the buffer) so
+    // pdf-lib can load and copy pages at export time.
+    rawBytes,
   };
 
   return {

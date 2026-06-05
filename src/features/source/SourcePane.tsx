@@ -43,17 +43,25 @@ export function SourcePane() {
       setIsLoading(true);
       let currentBytes = totalBytes;
 
-      for (const file of files) {
-        const result = await ingestFile(file, currentBytes);
-        if (result.ok) {
-          addResource(result.resource);
-          currentBytes += result.resource.sizeBytes;
-        } else {
-          pushError(result.reason);
+      try {
+        for (const file of files) {
+          try {
+            const result = await ingestFile(file, currentBytes);
+            if (result.ok) {
+              addResource(result.resource);
+              currentBytes += result.resource.sizeBytes;
+            } else {
+              pushError(result.reason);
+            }
+          } catch (err) {
+            // An unexpected throw must not abort the whole batch or strand the
+            // loading spinner — surface it and continue with the next file.
+            pushError(`"${file.name}": ${String(err)}`);
+          }
         }
+      } finally {
+        setIsLoading(false);
       }
-
-      setIsLoading(false);
     },
     [addResource, pushError, totalBytes],
   );
