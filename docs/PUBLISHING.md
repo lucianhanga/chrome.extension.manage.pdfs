@@ -21,6 +21,11 @@ the archive root, ready to upload. The script fails loudly if the
 
 ## Store listing assets
 
+Paste-ready listing text (name, short/detailed description, category,
+permission justifications) lives in [store-listing.md](store-listing.md). Image
+requirements and status are tracked in
+[store-assets/README.md](../store-assets/README.md).
+
 Prepare these in the Developer Dashboard before submitting:
 
 - **Store icon**: 128x128 PNG (the manifest icon is reused; replace the
