@@ -48,8 +48,13 @@ assembly, and export happen locally in the extension page using `pdf.js` (read/r
 | Drag-and-drop | @dnd-kit |
 | Tests | Vitest (unit) + Playwright (E2E, unpacked extension) |
 
-See [`docs/architecture.md`](docs/architecture.md) for the full design, the permission/CSP rationale, and
-the export-profile strategy.
+## Documentation
+
+- [User guide](docs/user-guide.md) — how to load files, assemble a PDF, and export.
+- [Architecture](docs/architecture.md) — full design, permission/CSP rationale, and export-profile strategy.
+- [Publishing checklist](docs/PUBLISHING.md) — packaging and Chrome Web Store submission.
+- [Store listing copy](docs/store-listing.md) — paste-ready Web Store text.
+- [Privacy policy](PRIVACY.md) — what the extension does and does not do with your data.
 
 ## Getting started
 
