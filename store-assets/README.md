@@ -8,7 +8,7 @@ Source images for the Chrome Web Store listing. See
 
 | Asset | Spec | Status |
 |-------|------|--------|
-| Store icon | 128x128 PNG | Reuses `public/icons/128.png` |
+| Store icon | 128x128 PNG | `store-icon-128.png` (artwork 96x96, 16px transparent padding) |
 | Screenshots | 1280x800 or 640x400 PNG/JPEG; at least 1, up to 5 | `01-source.png` present |
 | Small promo tile (optional) | 440x280 PNG/JPEG | Not yet created |
 | Marquee promo (optional) | 1400x560 PNG/JPEG | Not yet created |
@@ -16,7 +16,11 @@ Source images for the Chrome Web Store listing. See
 ## Files here
 
 - `01-source.png` — the two-pane workspace (Source + Destination).
-- `icon.svg` — vector master for the extension icon set.
+- `icon.svg` — vector master for the toolbar icon set (fills the full tile).
+- `store-icon.svg` — vector master for the Web Store listing icon (artwork
+  scaled to 96x96 inside the 128x128 canvas with 16px transparent padding).
+- `store-icon-128.png` — the rendered 128x128 store icon to upload to the
+  Developer Dashboard. Regenerate from `store-icon.svg` if the art changes.
 
 ## Recommended additional screenshots
 
