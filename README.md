@@ -119,4 +119,4 @@ docs/architecture.md             design and rationale
 
 ## License
 
-Private project. All rights reserved.
+[MIT](LICENSE) © Lucian Hanga

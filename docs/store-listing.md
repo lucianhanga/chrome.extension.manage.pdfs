@@ -38,48 +38,56 @@ English
 ## Detailed description
 
 ```
-PDF Manager is a complete workspace for building PDFs that runs entirely in your
-browser. Load PDFs, images, and text; pick the exact pages you want; drag them
-into any order; preview the result live; and export a brand-new PDF. Your files
-never leave your device - there is no network access and no access to the pages
-you visit.
+PDF Manager is a complete PDF-building workspace that runs entirely inside your
+browser. Combine PDFs, pull out just the pages you need, add images and text,
+put everything in the exact order you want, and export a clean new PDF - without
+uploading a single file to anyone.
+
+WHY YOU'LL WANT IT
+Most "merge PDF" and "split PDF" tools make you upload your documents to a
+website you don't control. That's a problem when the file is a contract, a
+payslip, a medical record, an ID, or anything else you'd rather not hand to a
+stranger's server. PDF Manager does all the work locally, so your documents
+never leave your device. It's also fast, works offline, and has nothing to sign
+up for.
+
+WHAT YOU CAN DO
+- Merge several PDFs into one.
+- Pick and choose individual pages - take page 3 from one file and pages 1-2
+  from another.
+- Reorder pages by dragging them into place.
+- Drop in images (PNG, JPEG, WebP, GIF) and plain text as new pages.
+- Duplicate or remove any page, and preview the result as you build it.
+- Export with the quality you need: print quality, a smaller web-friendly file,
+  or a heavily compressed version for email.
 
 HOW IT WORKS
-- Open the full-page workspace from the toolbar icon or the right-click "Open
-  PDF Manager" menu.
-- Load files by drag-and-drop or the file picker - PDF, PNG, JPEG, WebP, GIF,
-  and plain text are supported.
-- Drag pages, images, or text from the Source pane into the Destination pane.
-  For multi-page PDFs, multi-select pages (Ctrl/Cmd-click or Shift-click) and
-  drag them in together.
-- Reorder by dragging, duplicate or remove any item, and preview the assembled
-  document as you go.
-- Export with one of three quality profiles and download the finished PDF.
-
-THREE EXPORT PROFILES
-- Optimized for printing - highest quality; keeps vector text sharp.
-- Optimized for web sharing - balanced quality and file size.
-- Compressed - smallest file (note: this profile flattens pages to images, so
-  text is no longer selectable).
+Open the full-page workspace from the toolbar icon (or the right-click "Open PDF
+Manager" menu). Drag your files into the Source pane, then drag the pages,
+images, or text you want into the Destination pane. For multi-page PDFs, select
+several pages at once and drag them in together. Arrange the order, choose an
+export profile, and click Export - your finished PDF downloads instantly.
 
 PRIVATE BY DESIGN
-Everything - reading, rendering, assembling, and exporting - happens locally in
-the extension page. The extension makes NO network requests, requests NO host
-permissions, and has NO access to the websites you visit. Closing the tab clears
-everything from memory. The only permission requested is "contextMenus", used
-solely to add the right-click shortcut that opens the app.
+Everything - reading, rendering, assembling, and exporting - happens on your
+computer. PDF Manager makes NO network requests, asks for NO access to the
+websites you visit, and collects NO data, analytics, or tracking. The only
+permission it requests is a right-click shortcut to open the app. Close the tab
+and everything is cleared from memory.
 
-GUIDES & USER MANUAL
-- How to use it (illustrated walkthrough):
-  https://github.com/lucianhanga/chrome.extension.manage.pdfs/blob/main/docs/user-guide.md
-- Privacy policy:
-  https://github.com/lucianhanga/chrome.extension.manage.pdfs/blob/main/PRIVACY.md
-- Source code:
-  https://github.com/lucianhanga/chrome.extension.manage.pdfs
+OPEN SOURCE
+PDF Manager is free and open source (MIT licensed). You can read the full source
+code, verify exactly what it does, report issues, or contribute on GitHub:
+https://github.com/lucianhanga/chrome.extension.manage.pdfs
 
-PERMISSIONS & PRIVACY
-PDF Manager does not collect, transmit, or store any data on remote servers. It
-uses no analytics, tracking, advertising, or telemetry. It works fully offline.
+PERFECT FOR
+Combining scanned documents, building a single PDF from mixed files, extracting
+a few pages to share, assembling an application or portfolio, shrinking a PDF
+small enough to email, or reordering a report - all privately, all in your
+browser.
+
+Free, no account, no uploads. Learn more:
+https://github.com/lucianhanga/chrome.extension.manage.pdfs/blob/main/docs/user-guide.md
 ```
 
 ## Permission justifications and the data-practices form
